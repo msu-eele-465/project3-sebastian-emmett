@@ -1,6 +1,6 @@
 #include <msp430.h>
 #include <stdbool.h>
-#include <string.h>
+#include "keyboard.h"
 
 // 4x4 Keypad Layout
 static const char keypadMap[4][4] =
@@ -40,7 +40,7 @@ char poll_keypad(void)
 {
     #define ROW_MASK (BIT0 | BIT1 | BIT2 | BIT3)
 
-    unsigned int row;
+    int row;
     for (row = 0; row < 4; row++)
     {
         // Clear all rows
@@ -52,13 +52,13 @@ char poll_keypad(void)
         __delay_cycles(50);
 
         // Read columns from P4.4..7 => shift right by 4, mask 0x0F
-        unsigned char colState = (P4IN >> 4) & 0x0F;
+        unsigned char col_state = (P4IN >> 4) & 0x0F;
 
-        unsigned int col;
+        int col;
         for (col = 0; col < 4; col++)
         {
             // If column bit is high => pressed key
-            if (colState & (1 << col))
+            if (col_state & (1 << col))
             {
                 // Reset rows
                 P5OUT &= ~ROW_MASK;
@@ -71,4 +71,104 @@ char poll_keypad(void)
     // No key found
     P5OUT &= ~ROW_MASK;
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+// init_responseLED: LED on P6.6 (off initially)
+// ----------------------------------------------------------------------------
+void init_responseLED(void)
+{
+    P6DIR |= BIT6;
+    P6OUT &= ~BIT6;
+}
+
+// ----------------------------------------------------------------------------
+// init_keyscan_timer: Timer_B1 => fires ~every 50 ms
+// ----------------------------------------------------------------------------
+void init_keyscan_timer(void)
+{
+    // For 50 ms @ ~1 MHz SMCLK, /64 => 1 MHz/64 = 15625 Hz
+    // 50 ms => 0.05 * 15625 = 781 counts
+    TB1CTL   = TBSSEL__SMCLK | ID__8 | MC__UP | TBCLR; 
+    TB1EX0   = TBIDEX__8;        // total /64
+    TB1CCR0  = 781;             // ~50 ms 
+    TB1CCTL0 = CCIE;            // Enable CCR0 interrupt
+}
+
+// ----------------------------------------------------------------------------
+// Timer_B1 ISR => polls keypad every ~50ms and runs keyboard_interrupt logic
+// ----------------------------------------------------------------------------
+#pragma vector=TIMER1_B0_VECTOR
+__interrupt void TIMER1_B0_ISR(void)
+{
+    extern bool key_down;
+    extern char curr_key;
+    extern char prev_key;
+    extern bool locked;
+    extern int base_transition_period;
+    extern char curr_num;
+    extern char prev_num;
+    extern bool num_update;
+    extern bool reset_pattern;
+
+    char key = poll_keypad();
+    if (key != 0 && !key_down)  // A key was detected
+    {
+        key_down = true;
+        // Set P6.6 LED on
+        P6OUT |= BIT6;
+
+        // Shift curr_key -> prev_key, store the new key
+        prev_key = curr_key;
+        curr_key = key;
+
+        // ---------------------------
+        // Additional Logic
+        // ---------------------------
+        
+        // 1) If 'D' => set locked to true
+        if (key == 'D')
+        {
+            locked = true;
+        }
+        // 2) If 'A' => base_transition_period -= 4, min=4
+        else if (key == 'A')
+        {
+            base_transition_period -= 4;
+            if (base_transition_period < 4)
+            {
+                base_transition_period = 4;
+            }
+        }
+        // 3) If 'B' => base_transition_period += 4
+        else if (key == 'B')
+        {
+            base_transition_period += 4;
+        }
+        // 4) If key is numeric => update prev_num/curr_num, set flags
+        else if (key >= '0' && key <= '9')
+        {
+            // SHIFT
+            prev_num = curr_num;
+            curr_num = key;
+
+            // SET num_update = true
+            num_update = true;
+
+            // If prev_num == curr_num => reset_pattern = true
+            if (prev_num == curr_num)
+            {
+                reset_pattern = true;
+            }
+        }
+        // else: ignore other keys (*, #, C)
+
+    } 
+    else if (key == 0 && key_down == true) 
+    {
+        key_down = false;
+
+        // Set P6.6 to off
+        P6OUT &= ~BIT6;
+    }
 }

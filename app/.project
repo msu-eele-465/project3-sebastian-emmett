@@ -19,6 +19,16 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>heartbeat.c</name>
+			<type>1</type>
+			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/heartbeat.c</location>
+		</link>
+		<link>
+			<name>heartbeat.h</name>
+			<type>1</type>
+			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/heartbeat.h</location>
+		</link>
+		<link>
 			<name>keyboard.c</name>
 			<type>1</type>
 			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/keyboard.c</location>

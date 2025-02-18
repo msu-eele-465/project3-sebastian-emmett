@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../src/keyboard.h"  // We now include this to use init_keypad() and poll_keypad()
+#include "../src/heartbeat.h" // For init_heartbeat()
 
 // ----------------------------------------------------------------------------
 // Globals! (yes they deserve their own lil space)
@@ -39,9 +40,7 @@ volatile int pass_timer = 0;       // 5-second countdown if unlocking
 // ----------------------------------------------------------------------------
 // Function Prototypes
 // ----------------------------------------------------------------------------
-void init_heartbeat(void);     // Heartbeat LED on P1.0 (1 Hz)
-void init_responseLED(void);   // LED on P6.6
-void init_keyscan_timer(void); // Timer_B1 => ~50 ms
+void init_heartbeat(void);  // Heartbeat LED on P1.0 (1 Hz)
 
 // ----------------------------------------------------------------------------
 // MAIN
@@ -138,123 +137,4 @@ int main(void)
             __no_operation();
         }
     }
-}
-
-// ----------------------------------------------------------------------------
-// init_heartbeat: Toggle P1.0 ~ once per second using Timer_B
-// ----------------------------------------------------------------------------
-void init_heartbeat(void)
-{
-    // P1.0 as output, off initially
-    P1DIR |= BIT0;
-    P1OUT &= ~BIT0;
-
-    // Configure Timer_B0 for ~1Hz if SMCLK ~1MHz
-    TB0CTL  = TBSSEL__SMCLK | ID__8 | MC__UP | TBCLR; // SMCLK/8, up mode
-    TB0EX0  = TBIDEX__8;                              // further /8 => total /64
-    TB0CCR0 = 15625;                                  // 1 second at ~1 MHz/64
-    TB0CCTL0= CCIE;                                   // enable CCR0 interrupt :D
-}
-
-// ----------------------------------------------------------------------------
-// Timer_B0 ISR => toggles P1.0 (heartbeat)
-// ----------------------------------------------------------------------------
-#pragma vector = TIMER0_B0_VECTOR
-__interrupt void TIMER0_B0_ISR(void)
-{
-    P1OUT ^= BIT0;  // Toggle heartbeat LED!
-
-    // Decrement pass_timer if we're in unlocking mode
-    if (unlocking && pass_timer > 0)
-    {
-        pass_timer--;
-    }
-}
-
-// ----------------------------------------------------------------------------
-// init_keyscan_timer: Timer_B1 => fires ~every 50 ms
-// ----------------------------------------------------------------------------
-void init_keyscan_timer(void)
-{
-    // For 50 ms @ ~1 MHz SMCLK, /64 => 1 MHz/64 = 15625 Hz
-    // 50 ms => 0.05 * 15625 = 781 counts
-    TB1CTL   = TBSSEL__SMCLK | ID__8 | MC__UP | TBCLR; 
-    TB1EX0   = TBIDEX__8;        // total /64
-    TB1CCR0  = 781;             // ~50 ms 
-    TB1CCTL0 = CCIE;            // Enable CCR0 interrupt
-}
-
-// ----------------------------------------------------------------------------
-// Timer_B1 ISR => polls keypad every ~50ms and runs keyboard_interrupt logic
-// ----------------------------------------------------------------------------
-#pragma vector=TIMER1_B0_VECTOR
-__interrupt void TIMER1_B0_ISR(void)
-{
-    char key = poll_keypad();
-    if (key != 0 && !key_down)  // A key was detected
-    {
-        key_down = true;
-        // Set P6.6 LED on
-        P6OUT |= BIT6;
-
-        // Shift curr_key -> prev_key, store the new key
-        prev_key = curr_key;
-        curr_key = key;
-
-        // ---------------------------
-        // Additional Logic
-        // ---------------------------
-        
-        // 1) If 'D' => set locked to true
-        if (key == 'D')
-        {
-            locked = true;
-        }
-        // 2) If 'A' => base_transition_period -= 4, min=4
-        else if (key == 'A')
-        {
-            base_transition_period -= 4;
-            if (base_transition_period < 4)
-            {
-                base_transition_period = 4;
-            }
-        }
-        // 3) If 'B' => base_transition_period += 4
-        else if (key == 'B')
-        {
-            base_transition_period += 4;
-        }
-        // 4) If key is numeric => update prev_num/curr_num, set flags
-        else if (key >= '0' && key <= '9')
-        {
-            // SHIFT
-            prev_num = curr_num;
-            curr_num = key;
-
-            // SET num_update = true
-            num_update = true;
-
-            // If prev_num == curr_num => reset_pattern = true
-            if (prev_num == curr_num)
-            {
-                reset_pattern = true;
-            }
-        }
-        // else: ignore other keys (*, #, C)
-
-    } else if (key == 0 && key_down == true) {
-        key_down = false;
-
-        // Set P6.6 to off
-        P6OUT &= ~BIT6;
-    }
-}
-
-// ----------------------------------------------------------------------------
-// init_responseLED: LED on P6.6 (off initially)
-// ----------------------------------------------------------------------------
-void init_responseLED(void)
-{
-    P6DIR |= BIT6;
-    P6OUT &= ~BIT6;
 }
