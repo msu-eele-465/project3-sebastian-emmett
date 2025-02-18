@@ -15,6 +15,7 @@ static const char keypadMap[4][4] =
 // Globals! (yes they deserve their own lil space)
 // ----------------------------------------------------------------------------
 // For general key tracking
+bool key_down = false;
 char curr_key = 0;
 char prev_key = 0;
 
@@ -200,10 +201,11 @@ void init_keyscan_timer(void)
 __interrupt void TIMER1_B0_ISR(void)
 {
     char key = poll_keypad();
-    if (key != 0)  // A key was detected
+    if (key != 0 && !key_down)  // A key was detected
     {
-        // Toggle LED on any key press
-        P6OUT ^= BIT6;
+        key_down = true;
+        // Set P6.6 LED on
+        P6OUT |= BIT6;
 
         // Shift curr_key -> prev_key, store the new key
         prev_key = curr_key;
@@ -250,14 +252,11 @@ __interrupt void TIMER1_B0_ISR(void)
         }
         // else: ignore other keys (*, #, C)
 
-        // Debounce ~50ms
-        __delay_cycles(50000);
+    } else if (key == 0 && key_down == true) {
+        key_down = false;
 
-        // Wait until key is released
-        while (poll_keypad() != 0)
-        {
-            // do nothing until no key is pressed
-        }
+        // Set P6.6 to off
+        P6OUT &= ~BIT6;
     }
 }
 
