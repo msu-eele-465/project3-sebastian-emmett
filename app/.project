@@ -38,5 +38,15 @@
 			<type>1</type>
 			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/keyboard.h</location>
 		</link>
+		<link>
+			<name>led_bar.c</name>
+			<type>1</type>
+			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/led_bar.c</location>
+		</link>
+		<link>
+			<name>led_bar.h</name>
+			<type>1</type>
+			<location>C:/Users/Emmett Osborne/Documents/Projects/School/EELE465/project3-sebastian-emmett/src/led_bar.h</location>
+		</link>
 	</linkedResources>
 </projectDescription>
