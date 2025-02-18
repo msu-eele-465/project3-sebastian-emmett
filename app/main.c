@@ -10,17 +10,37 @@ static const char keypadMap[4][4] =
     {'*','0','#','D'}
 };
 
-// Variables for most recent and previous key
+// ----------------------------------------------------------------------------
+// Globals! (yes they deserve their own lil space)
+// ----------------------------------------------------------------------------
+// For general key tracking
 char curr_key = 0;
 char prev_key = 0;
+
+// For numeric-only tracking
+char curr_num = 0;
+char prev_num = 0;
+
+// A boolean for locked/unlocked
+bool locked = true; // Default true ofc
+
+// Our base transition period variable. Technically this is an int representation of how many 1/16s our actual BTP is but whatever
+int base_transition_period = 4;
+
+// If a numeric key is pressed, set num_update = true
+bool num_update = false;
+
+// If the new numeric key == previous numeric key, set reset_pattern = true
+bool reset_pattern = false;
 
 // ----------------------------------------------------------------------------
 // Function Prototypes
 // ----------------------------------------------------------------------------
-void init_heartbeat(void);    // Heartbeat LED on P1.0 (1 Hz)
+void init_heartbeat(void);     // Heartbeat LED on P1.0 (1 Hz)
 void init_keypad(void);       
-void init_responseLED(void);  // LED on P6.6
-char poll_keypad(void);
+void init_responseLED(void);   // LED on P6.6
+char poll_keypad(void);        // Active-high keypad scan
+void init_keyscan_timer(void); // Timer_B1 => ~50 ms
 
 // ----------------------------------------------------------------------------
 // MAIN
@@ -33,36 +53,14 @@ int main(void)
     init_heartbeat();    // Set up Timer_B0 for blinking P1.0
     init_keypad();       // Init keyboard with P6s as input and P5s as output
     init_responseLED();  // LED on P6.6 to show when a key gets pressed
+    init_keyscan_timer(); // Timer_B1 => ~50 ms interrupt
 
     // Enable global interrupts for the heartbeat timer
     __bis_SR_register(GIE);
 
     while(1)
     {
-        // Poll the keypad
-        char key = poll_keypad();
-
-        if (key != 0)  // A key was detected
-        {
-            // Toggle LED on *any* key press
-            P6OUT ^= BIT6;
-
-            // Shift curr_key -> prev_key, store the new key
-            prev_key = curr_key;
-            curr_key = key;
-
-            // Debounce ~200ms
-            __delay_cycles(200000);
-
-            // Wait until key is released
-            while (poll_keypad() != 0)
-            {
-                // do nothing until no key is pressed
-            }
-        }
-
-        // ~20ms gap between polls
-        __delay_cycles(20000);
+        __no_operation(); // This is temporary until I have the keyboard interrupt settled lol
     }
 }
 
@@ -89,6 +87,87 @@ void init_heartbeat(void)
 __interrupt void TIMER0_B0_ISR(void)
 {
     P1OUT ^= BIT0;  // Toggle heartbeat LED!
+}
+
+// ----------------------------------------------------------------------------
+// init_keyscan_timer: Timer_B1 => fires ~every 50 ms
+// ----------------------------------------------------------------------------
+void init_keyscan_timer(void)
+{
+    // For 50 ms @ ~1 MHz SMCLK, /64 => 1 MHz/64 = 15625 Hz
+    // 50 ms => 0.05 * 15625 = 781 counts
+    TB1CTL   = TBSSEL__SMCLK | ID__8 | MC__UP | TBCLR; 
+    TB1EX0   = TBIDEX__8;        // total /64
+    TB1CCR0  = 781;             // ~50 ms 
+    TB1CCTL0 = CCIE;            // Enable CCR0 interrupt
+}
+
+// ----------------------------------------------------------------------------
+// Timer_B1 ISR => polls keypad every ~50ms and runs keyboard_interrupt logic
+// ----------------------------------------------------------------------------
+#pragma vector=TIMER1_B0_VECTOR
+__interrupt void TIMER1_B0_ISR(void)
+{
+    char key = poll_keypad();
+    if (key != 0)  // A key was detected
+    {
+        // Toggle LED on any key press
+        P6OUT ^= BIT6;
+
+        // Shift curr_key -> prev_key, store the new key
+        prev_key = curr_key;
+        curr_key = key;
+
+        // ---------------------------
+        // Additional Logic
+        // ---------------------------
+        
+        // 1) If 'D' => set locked to true
+        if (key == 'D')
+        {
+            locked = true;
+        }
+        // 2) If 'A' => base_transition_period -= 4, min=4
+        else if (key == 'A')
+        {
+            base_transition_period -= 4;
+            if (base_transition_period < 4)
+            {
+                base_transition_period = 4;
+            }
+        }
+        // 3) If 'B' => base_transition_period += 4
+        else if (key == 'B')
+        {
+            base_transition_period += 4;
+        }
+        // 4) If key is numeric => update prev_num/curr_num, set flags
+        else if (key >= '0' && key <= '9')
+        {
+            // SHIFT
+            prev_num = curr_num;
+            curr_num = key;
+
+            // SET num_update = true
+            num_update = true;
+
+            // If prev_num == curr_num => reset_pattern = true
+            if (prev_num == curr_num)
+            {
+                reset_pattern = true;
+            }
+        }
+        // else: ignore other keys (*, #, C)
+
+        // Debounce ~50ms
+        __delay_cycles(50000);
+
+        // Wait until key is released
+        while (poll_keypad() != 0)
+        {
+            // do nothing until no key is pressed
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
