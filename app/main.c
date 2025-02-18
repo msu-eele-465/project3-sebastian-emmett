@@ -1,5 +1,6 @@
 #include <msp430.h>
 #include <stdbool.h>
+#include <string.h>
 
 // 4x4 Keypad Layout
 static const char keypadMap[4][4] =
@@ -33,6 +34,15 @@ bool num_update = false;
 // If the new numeric key == previous numeric key, set reset_pattern = true
 bool reset_pattern = false;
 
+// Variables for our passcode
+bool unlocking = false;             // True while we're collecting 4 digits
+static const char correct_pass[] = "1234";  // Hard-coded correct passcode
+char pass_entered[5];              // Room for 4 digits + null terminator
+unsigned pass_index = 0;           // How many digits we've collected so far
+
+// Timeout tracking: We'll use the heartbeat (1Hz) to decrement
+volatile int pass_timer = 0;       // 5-second countdown if unlocking
+
 // ----------------------------------------------------------------------------
 // Function Prototypes
 // ----------------------------------------------------------------------------
@@ -60,7 +70,82 @@ int main(void)
 
     while(1)
     {
-        __no_operation(); // This is temporary until I have the keyboard interrupt settled lol
+        // ----------------------------------------------------------------------------
+        // 1) If we are locked but NOT unlocking...
+        //    - Wait for the first numeric key press (num_update)
+        // ----------------------------------------------------------------------------
+        if (locked && !unlocking)
+        {
+            // If no numeric key has been pressed yet, do nothing
+            if (!num_update)
+            {
+                // Just idle here
+                __no_operation();
+            }
+            else
+            {
+                // We got a numeric press => start unlocking process
+                unlocking = true;
+                num_update = false;  // We consumed this press
+
+                // Start collecting passcode digits
+                pass_index = 0;
+
+                // The digit that triggered num_update is in 'curr_num'
+                pass_entered[pass_index++] = curr_num;
+
+                // Start 5-second timer
+                pass_timer = 5;
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        // 2) If we ARE locked and in the middle of unlocking...
+        //    - Gather a total of 4 numeric keys
+        // ----------------------------------------------------------------------------
+        else if (locked && unlocking)
+        {
+            // Check if we've run out of time
+            if (pass_timer == 0)
+            {
+                // Time’s up => reset D:
+                unlocking = false;
+                pass_index = 0;
+            }
+            else
+            {
+                // We still have time => collect digits!
+                if (pass_index < 4)
+                {
+                    if (num_update)
+                    {
+                        pass_entered[pass_index++] = curr_num;
+                        num_update = false;
+                    }
+                }
+                else
+                {
+                    // 4 digits => compare
+                    pass_entered[4] = '\0';
+                    if (strcmp(pass_entered, correct_pass) == 0)
+                    {
+                        // Correct => unlock
+                        locked = false;
+                    }
+                    // Otherwise => stay locked, reset
+                    unlocking = false;
+                }
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        // 3) If we are NOT locked => do nothing special
+        // ----------------------------------------------------------------------------
+        else
+        {
+            // locked == false => do nothing
+            __no_operation();
+        }
     }
 }
 
@@ -87,6 +172,12 @@ void init_heartbeat(void)
 __interrupt void TIMER0_B0_ISR(void)
 {
     P1OUT ^= BIT0;  // Toggle heartbeat LED!
+
+    // Decrement pass_timer if we're in unlocking mode
+    if (unlocking && pass_timer > 0)
+    {
+        pass_timer--;
+    }
 }
 
 // ----------------------------------------------------------------------------
