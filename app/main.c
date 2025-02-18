@@ -263,7 +263,7 @@ __interrupt void TIMER1_B0_ISR(void)
 // ----------------------------------------------------------------------------
 // init_keypad: 
 //   Rows (P5.0..3) as outputs
-//   Columns (P6.0..3) as inputs - active-high requires pull-downs
+//   Columns now on P4.4..7 - active-high requires pull-downs
 // ----------------------------------------------------------------------------
 void init_keypad(void)
 {
@@ -271,12 +271,12 @@ void init_keypad(void)
     P5DIR |= (BIT0 | BIT1 | BIT2 | BIT3);
     P5OUT &= ~(BIT0 | BIT1 | BIT2 | BIT3);
 
-    // Columns = inputs
-    P6DIR &= ~(BIT0 | BIT1 | BIT2 | BIT3);
+    // Columns = inputs on P4.4..7
+    P4DIR &= ~(BIT4 | BIT5 | BIT6 | BIT7);
 
-    // Enable internal pull-downs
-    P6REN |=  (BIT0 | BIT1 | BIT2 | BIT3);
-    P6OUT &= ~(BIT0 | BIT1 | BIT2 | BIT3);
+    // Enable internal pull-downs for columns on P4.4..7
+    P4REN |=  (BIT4 | BIT5 | BIT6 | BIT7);
+    P4OUT &= ~(BIT4 | BIT5 | BIT6 | BIT7);
 }
 
 // ----------------------------------------------------------------------------
@@ -291,7 +291,7 @@ void init_responseLED(void)
 // ----------------------------------------------------------------------------
 // poll_keypad:
 //   1) For each row, set that row high, all others low
-//   2) Read columns. If any column bit is 1 => pressed key
+//   2) Read columns (P4.4..7). If any column bit is 1 => pressed key
 //   3) Return the char from keypadMap[row][col], or 0 if none
 // ----------------------------------------------------------------------------
 char poll_keypad(void)
@@ -309,8 +309,8 @@ char poll_keypad(void)
         // Small settle delay - DO NOT REMOVE THIS LMAO
         __delay_cycles(50);
 
-        // Read columns (low nibble of P6 :D)
-        unsigned char colState = P6IN & 0x0F;
+        // Read columns from P4.4..7 => shift right by 4, mask 0x0F
+        unsigned char colState = (P4IN >> 4) & 0x0F;
 
         int col;
         for (col = 0; col < 4; col++)
@@ -320,7 +320,7 @@ char poll_keypad(void)
             {
                 // Reset rows
                 P5OUT &= ~ROW_MASK;
-                // Return the key from keypadMap
+                // Return the key from keypadMap[row][col]
                 return keypadMap[row][col];
             }
         }
