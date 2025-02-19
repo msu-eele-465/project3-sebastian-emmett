@@ -67,6 +67,8 @@ int main(void)
     while(1)
     {
         led_bar_update_pattern();
+        locked = false;
+        num_update = false;
         led_bar_delay();
     }
 }
