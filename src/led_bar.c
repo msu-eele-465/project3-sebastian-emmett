@@ -24,13 +24,13 @@ char pointer_7_array[] = {0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF};
 #define pointer_7_array_END 0xFF
 
 // pointers and counts used for the pattern logic
-unsigned char count_1 = 0xAA;
-unsigned char count_2 = 0x0;
-unsigned char count_3 = 0;
-unsigned char count_4 = 255;
-char * pointer_5 = pointer_5_array;
-char * pointer_6 = pointer_6_array;
-char * pointer_7 = pointer_7_array;
+unsigned char count_1 = ~0xAA;
+unsigned char count_2 = 255;
+unsigned char count_3 = COUNT_3_ARRAY_MAX_INDEX;
+unsigned char count_4 = 0;
+char * pointer_5 = pointer_5_array + 7;
+char * pointer_6 = pointer_6_array + 7;
+char * pointer_7 = pointer_7_array + 7;
 
 void led_bar_init(void)
 {
@@ -103,11 +103,10 @@ void led_bar_update_pattern(void)
             }
             else
             {
-                (count_3 <= COUNT_3_ARRAY_MAX_INDEX) ? (count_3++) : (count_3 = 0);
-
+                (count_3 < COUNT_3_ARRAY_MAX_INDEX) ? (count_3++) : (count_3 = 0);
             }
 
-            led_bar_update(count_3);    // display two led's boucing against each other
+            led_bar_update(COUNT_3_ARRAY[count_3]);    // display two led's boucing against each other
 
             break;
 
@@ -177,7 +176,7 @@ void led_bar_update_pattern(void)
             break;
 
         default:
-            // No changes? Not 100% sure
+            reset_pattern = false;
             break;
     }
 
