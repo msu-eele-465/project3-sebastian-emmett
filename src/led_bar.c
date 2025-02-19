@@ -5,7 +5,7 @@
 // We'll reference these globals from main:
 extern int base_transition_period;
 extern int BTP_multiplier;
-extern int curr_num;
+extern char curr_num;
 extern bool locked;
 extern bool num_update;
 extern bool reset_pattern;
@@ -31,6 +31,16 @@ unsigned char count_4 = 255;
 char * pointer_5 = pointer_5_array;
 char * pointer_6 = pointer_6_array;
 char * pointer_7 = pointer_7_array;
+
+void led_bar_init(void)
+{
+    // configure digital I/O
+    P3SEL0 &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+    P3SEL1 &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+
+    P3DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;         // set as output
+    P3OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);      // clear output
+}
 
 // ----------------------------------------------------------------------------
 // led_bar_update_pattern:
