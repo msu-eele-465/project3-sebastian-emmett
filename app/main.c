@@ -1,8 +1,9 @@
 #include <msp430.h>
 #include <stdbool.h>
 #include <string.h>
-#include "../src/keyboard.h"  // We now include this to use init_keypad() and poll_keypad()
+#include "../src/keyboard.h"  // Include this to use init_keypad() and poll_keypad()
 #include "../src/heartbeat.h" // For init_heartbeat()
+#include "../src/led_bar.h" // For led_bar_update_pattern() and led_bar_delay
 
 // ----------------------------------------------------------------------------
 // Globals! (yes they deserve their own lil space)
@@ -27,6 +28,9 @@ bool num_update = false;
 
 // If the new numeric key == previous numeric key, set reset_pattern = true
 bool reset_pattern = false;
+
+// The global int BTP_multiplier:
+int BTP_multiplier = 0;
 
 // Variables for our passcode
 bool unlocking = false;             // True while we're collecting 4 digits
@@ -100,7 +104,6 @@ int main(void)
             {
                 // Time’s up => reset D:
                 unlocking = false;
-                pass_index = 0;
             }
             else
             {
@@ -129,12 +132,13 @@ int main(void)
         }
 
         // ----------------------------------------------------------------------------
-        // 3) If we are NOT locked => do nothing special
+        // 3) If we are NOT locked => begin updating led_bar
         // ----------------------------------------------------------------------------
         else
         {
-            // locked == false => do nothing
-            __no_operation();
+            // locked == false => update led_bar
+            led_bar_update_pattern();
+            led_bar_delay();
         }
     }
 }
