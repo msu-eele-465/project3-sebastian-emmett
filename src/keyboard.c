@@ -130,7 +130,6 @@ __interrupt void TIMER1_B0_ISR(void)
         // 1) If 'D' => set locked to true
         if (key == 'D')
         {
-            rgb_set(0xC4, 0x3E, 0x1D);      // set state led to red color, for locked
             locked = true;
         }
         // 2) If 'A' => base_transition_period -= 4, min=4

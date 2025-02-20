@@ -212,6 +212,7 @@ void led_bar_delay(void)
         // If num_update == true, return out of the function
         if (num_update == true)
         {
+            num_update = false;
             return;
         }
 
