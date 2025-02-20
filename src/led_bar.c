@@ -11,7 +11,7 @@ extern bool num_update;
 extern bool reset_pattern;
 
 // arrays used for pattern logic
-const char COUNT_3_ARRAY[] = {0x18, 0x24, 0x42, 0x81, 0x41, 0x24};
+const char COUNT_3_ARRAY[] = {0x18, 0x24, 0x42, 0x81, 0x42, 0x24};
 #define COUNT_3_ARRAY_MAX_INDEX 5
 
 char pointer_5_array[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
@@ -24,13 +24,15 @@ char pointer_7_array[] = {0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF};
 #define pointer_7_array_END 0xFF
 
 // pointers and counts used for the pattern logic
+// each is assigned to the last value possible so when starting its
+// routine it ends up starting at the beginning
 unsigned char count_1 = ~0xAA;
 unsigned char count_2 = 255;
 unsigned char count_3 = COUNT_3_ARRAY_MAX_INDEX;
 unsigned char count_4 = 0;
-char * pointer_5 = pointer_5_array + 7;
-char * pointer_6 = pointer_6_array + 7;
-char * pointer_7 = pointer_7_array + 7;
+char *pointer_5 = pointer_5_array + 7;
+char *pointer_6 = pointer_6_array + 7;
+char *pointer_7 = pointer_7_array + 7;
 
 void led_bar_init(void)
 {
@@ -47,7 +49,7 @@ void led_bar_init(void)
 //   Single switch case over curr_num, cases for 0-7
 //   Set BTP_multiplier = 2 in the respective value
 //   React to reset_pattern
-//   Then update the pattern accordingly #TODO
+//   Then update the pattern accordingly
 // ----------------------------------------------------------------------------
 void led_bar_update_pattern(void)
 {
@@ -212,6 +214,7 @@ void led_bar_delay(void)
         // If num_update == true, return out of the function
         if (num_update == true)
         {
+            num_update = false;
             return;
         }
 

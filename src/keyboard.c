@@ -4,7 +4,7 @@
 #include "../src/rgb_led.h"
 
 // 4x4 Keypad Layout
-static const char keypadMap[4][4] =
+static const char KEYPAD_MAP[4][4] =
 {
     {'1','2','3','A'},
     {'4','5','6','B'},
@@ -35,7 +35,7 @@ void init_keypad(void)
 // poll_keypad:
 //   1) For each row, set that row high, all others low
 //   2) Read columns (P4.4..7). If any column bit is 1 => pressed key
-//   3) Return the char from keypadMap[row][col], or 0 if none
+//   3) Return the char from KEYPAD_MAP[row][col], or 0 if none
 // ----------------------------------------------------------------------------
 char poll_keypad(void)
 {
@@ -63,8 +63,8 @@ char poll_keypad(void)
             {
                 // Reset rows
                 P5OUT &= ~ROW_MASK;
-                // Return the key from keypadMap[row][col]
-                return keypadMap[row][col];
+                // Return the key from KEYPAD_MAP[row][col]
+                return KEYPAD_MAP[row][col];
             }
         }
     }
@@ -130,11 +130,10 @@ __interrupt void TIMER1_B0_ISR(void)
         // 1) If 'D' => set locked to true
         if (key == 'D')
         {
-            rgb_set(0xC4, 0x3E, 0x1D);      // set state led to red color, for locked
             locked = true;
         }
         // 2) If 'A' => base_transition_period -= 4, min=4
-        else if (key == 'A')
+        else if (key == 'A' && !locked)
         {
             base_transition_period -= 4;
             if (base_transition_period < 4)
@@ -143,7 +142,7 @@ __interrupt void TIMER1_B0_ISR(void)
             }
         }
         // 3) If 'B' => base_transition_period += 4
-        else if (key == 'B')
+        else if (key == 'B' && !locked)
         {
             base_transition_period += 4;
         }
