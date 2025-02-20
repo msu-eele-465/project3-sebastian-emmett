@@ -10,11 +10,9 @@ void pwm_init(void);
 #define pwm_set_duty_ccr1(new_pulse_width) (TB3CCR1 = new_pulse_width)
 
 // update CCR2 for TimerB3 to the new on pulse width
-// in other words, update the duty cycle
 #define pwm_set_duty_ccr2(new_pulse_width) (TB3CCR2 = new_pulse_width)
 
 // update CCR3 for TimerB3 to the new on pulse width
-// in other words, update the duty cycle
 #define pwm_set_duty_ccr3(new_pulse_width) (TB3CCR3 = new_pulse_width)
 
 // update CCR0 for TimerB3 to the new period

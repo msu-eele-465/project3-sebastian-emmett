@@ -30,7 +30,7 @@ bool reset_pattern = false;
 
 // Variables for our passcode
 bool unlocking = false;             // True while we're collecting 4 digits
-static const char correct_pass[] = "1234";  // Hard-coded correct passcode
+static const char CORRECT_PASS[] = "1234";  // Hard-coded correct passcode
 char pass_entered[5];              // Room for 4 digits + null terminator
 unsigned pass_index = 0;           // How many digits we've collected so far
 
@@ -117,7 +117,7 @@ int main(void)
                 {
                     // 4 digits => compare
                     pass_entered[4] = '\0';
-                    if (strcmp(pass_entered, correct_pass) == 0)
+                    if (strcmp(pass_entered, CORRECT_PASS) == 0)
                     {
                         // Correct => unlock
                         locked = false;
