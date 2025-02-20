@@ -1,6 +1,7 @@
 #include <msp430.h>
 #include <stdbool.h>
-#include "led_bar.h"
+#include "../src/led_bar.h"
+#include "../src/rgb_led.h"
 
 // We'll reference these globals from main:
 extern int base_transition_period;
