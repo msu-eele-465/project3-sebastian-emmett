@@ -23,7 +23,7 @@ char prev_num = 0;
 bool locked = true; // Default true ofc
 
 // Our base transition period variable. Technically this is an int representation of how many 1/16s our actual BTP is but whatever
-int base_transition_period = 4;
+int base_transition_period = 16;
 
 // If a numeric key is pressed, set num_update = true
 bool num_update = false;
@@ -32,7 +32,7 @@ bool num_update = false;
 bool reset_pattern = false;
 
 // The global int BTP_multiplier:
-int BTP_multiplier = 0;
+float BTP_multiplier = 1;
 
 // Variables for our passcode
 bool unlocking = false;             // True while we're collecting 4 digits
@@ -71,6 +71,8 @@ int main(void)
         // ----------------------------------------------------------------------------
         if (locked && !unlocking)
         {
+            rgb_set(0xC4, 0x3E, 0x1D);      // set state LED to red color, for locked
+            led_bar_update(0x00);
             // If no numeric key has been pressed yet, do nothing
             if (!num_update)
             {
@@ -122,13 +124,12 @@ int main(void)
                 }
                 else
                 {
-                    rgb_set(0xC4, 0x3E, 0x1D);      // set state LED to red color, for locked
-
                     // 4 digits => compare
                     pass_entered[4] = '\0';
                     if (strcmp(pass_entered, correct_pass) == 0)
                     {
                         // Correct => unlock
+                        curr_num = 0;
                         locked = false;
                         rgb_set(0x1D, 0xA2, 0xC4);  // set state LED to blueish color, for unlocked
                     }
