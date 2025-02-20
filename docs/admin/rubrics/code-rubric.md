@@ -19,33 +19,33 @@
     <td >Points</td>
   </tr>
   <tr>
-    <td><b>Flowcharts / diagrams</b></td>
-    <td >1</td>
-    <td >Team did not make any flowcharts or circuit diagrams</td>
+    <td><b>Diagrams</b></td>
+    <td>1</td>
+    <td>Team did not make any flowcharts, circuit diagrams, or architecture block diagrams</td>
     <td >0</td>
-    <td></td>
-    <td ></td>
-    <td >Team made legible flowcharts and circuit diagrams</td>
+    <td>Team made some useful diagrams, but diagrams were not complete or some were missing</td>
+    <td>0.5</td>
+    <td >Team made legible and useful diagrams</td>
     <td >1</td>
   </tr>
   <tr>
     <td><b>Code comments/documentation</b></td>
-    <td >1</td>
-    <td >Subroutines are not documented; comments are non-existent or completely unhelpful (e.g., they just repeat what the code says)</td>
-    <td >0</td>
-    <td>Most subroutines are documented okay; comments are okay, but are sometimes unhelpful (e.g., they just repeat what the code says rather than explaining the intent)</td>
-    <td >0.5</td>
-    <td >Subroutines are commented (inputs/outputs, registers, etc. are documented); comments explain the intention of the code.</td>
-    <td >1</td>
+    <td>1</td>
+    <td>Funcitons/files are not documented; comments are non-existent or completely unhelpful (e.g., they just repeat what the code says)</td>
+    <td>0</td>
+    <td>Most functions/files are documented okay; comments are okay, but are sometimes unhelpful (e.g., they just repeat what the code says rather than explaining the intent)</td>
+    <td>0.5</td>
+    <td>Functions/files are documented using Doxygen syntax; comments explain the intention of the code.</td>
+    <td>1</td>
   </tr>
   <tr>
     <td><b>Code readability</b></td>
-    <td >1</td>
-    <td >Formatting is inconsistent; names are not descriptive</td>
+    <td>1</td>
+    <td>Formatting is does not follow style guide; names are not descriptive</td>
     <td >0</td>
-    <td>Formatting is reasonable; names are mostly descriptive, but could be better</td>
-    <td >0.5</td>
-    <td >Code formatting is readable; names are descriptive</td>
-    <td >1</td>
+    <td>Formatting follows style guide; names are mostly descriptive, but could be better</td>
+    <td>0.5</td>
+    <td>Code formatting follows style guide; names are descriptive</td>
+    <td>1</td>
   </tr>
 </tbody></table>
